@@ -145,4 +145,4 @@ echo ""
 echo "Press Ctrl+C to stop all services"
 echo ""
 
-docker-compose -f $COMPOSE_FILE up
+docker-compose -f "${PWD}/${COMPOSE_FILE}" up
