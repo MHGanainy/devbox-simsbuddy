@@ -1,0 +1,76 @@
+# docker-compose.cloud.yml - Railway database configuration
+services:
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3000
+      - VITE_WS_URL=ws://localhost:8000
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+      - voice-agent
+
+  backend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    environment:
+      - DATABASE_URL=postgresql://postgres:IBdHmFwKDoDzMYEyVyhuYBwgdaWayUiJ@caboose.proxy.rlwy.net:55655/railway
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - VOICE_ASSISTANT_API_URL=http://voice-agent:8000
+      - VOICE_ASSISTANT_WS_URL=ws://voice-agent:8000/ws/conversation
+      - VOICE_AGENT_SHARED_SECRET=2c99e4f256738c811fda12c7702f6886505d8435d6a65ee21e17022b1be208c0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npx prisma generate && npm run dev"
+
+  voice-agent:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./voice-agent/backend:/app
+      - python_cache:/root/.cache
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://postgres:IBdHmFwKDoDzMYEyVyhuYBwgdaWayUiJ@caboose.proxy.rlwy.net:55655/railway
+      - BACKEND_URL=http://backend:3000
+      - BACKEND_SHARED_SECRET=2c99e4f256738c811fda12c7702f6886505d8435d6a65ee21e17022b1be208c0
+      - TOKEN_EXPIRY_MINUTES=30
+      - AUTH_DEV_MODE=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - ELEVEN_API_KEY=${ELEVEN_API_KEY}
+      - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY}
+      - SPEECHIFY_API_KEY=${SPEECHIFY_API_KEY}
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+      - RIME_API_KEY=${RIME_API_KEY}
+      - RIVA_API_KEY=${RIVA_API_KEY}
+      - GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}
+      - GOOGLE_PRIVATE_KEY_ID=${GOOGLE_PRIVATE_KEY_ID}
+      - GOOGLE_PRIVATE_KEY=${GOOGLE_PRIVATE_KEY}
+      - GOOGLE_CLIENT_EMAIL=${GOOGLE_CLIENT_EMAIL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_X509_CERT_URL=${GOOGLE_CLIENT_X509_CERT_URL}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - ASSEMBLY_API_KEY=${ASSEMBLY_API_KEY}
+      - INWORLD_API_KEY=${INWORLD_API_KEY}
+    ports:
+      - "8000:8000"
+    command: sh -c "pip install --upgrade pip && pip install -r requirements.txt && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
+
+volumes:
+  frontend_node_modules:
+  backend_node_modules:
+  python_cache:
