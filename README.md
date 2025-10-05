@@ -1,82 +1,133 @@
-# Development Environment Setup
+# SimsBuddy Development Environment
 
-## 🚀 Quick Start Guide
+## 🎯 What This Does
 
-### Step 1: Install Required Software (One-time only)
+This setup creates a complete testing environment for SimsBuddy on your computer. Everything runs locally - no coding knowledge needed!
 
-You need to install 2 programs:
+## 📋 Before You Start (One-Time Setup)
 
-1. **Docker Desktop**
-   - Download from: https://www.docker.com/products/docker-desktop
-   - Run the installer (click "Yes" to everything)
-   - **Windows users**: Restart your computer after installation
-   - Start Docker Desktop (it should start automatically)
+### Step 1: Install Docker Desktop
+Docker makes everything work together. Think of it as a container that holds all the parts.
 
-2. **Git** 
-   - **Windows**: Download from https://git-scm.com/download/win
-   - **Mac**: Already installed! Skip this.
-   - **Linux**: Run `sudo apt-get install git`
+**Windows Users:**
+1. Download from: https://www.docker.com/products/docker-desktop
+2. Run the installer (click "OK" or "Yes" to all prompts)
+3. **IMPORTANT**: Restart your computer after installation
+4. Docker Desktop should start automatically (look for the whale icon in your system tray)
 
-### Step 2: Start Everything
+**Mac Users:**
+1. Download from: https://www.docker.com/products/docker-desktop
+2. Open the downloaded file and drag Docker to Applications
+3. Start Docker from Applications (look for the whale icon in your menu bar)
 
-1. Make sure Docker Desktop is running (check system tray/menu bar)
-2. Double-click the start script:
-   - **Windows**: Double-click `start.bat`
-   - **Mac/Linux**: Double-click `start.sh`
+### Step 2: Install Git (Windows Only)
+Git helps manage the code files. Mac already has this!
 
-3. Wait 2-3 minutes (first time will take longer)
+**Windows Users:**
+1. Download from: https://git-scm.com/download/win
+2. Run the installer (keep all default settings)
+3. No restart needed
 
-### Step 3: Access Your Applications
+### Step 3: Set Up GitHub Access (Optional but Recommended)
+This makes updates faster and more reliable.
 
-Once running, open your web browser and go to:
-- **Main Application**: http://localhost:5173
-- **Backend API**: http://localhost:3000
-- **Voice Service**: http://localhost:8000
+**Windows:** Double-click `setup-github-ssh.bat`
+**Mac:** Double-click `setup-github-ssh.sh`
 
-## 📝 Making Changes
+Follow the instructions that appear. You'll need to copy a key to GitHub (the script will show you how).
 
-1. Open any file in these folders:
-   - `frontend/` - React application
-   - `backend/` - Node.js API
-   - `voice-agent/` - Python voice service
+## 🚀 Daily Use - Starting SimsBuddy
 
-2. Save your changes - everything will automatically reload!
+### To Start Everything:
+1. **Make sure Docker Desktop is running** (look for the whale icon)
+2. Double-click the appropriate file:
+   - **Windows:** Double-click `start.bat`
+   - **Mac:** Double-click `start.sh`
+3. Choose your database option when prompted:
+   - Press `1` for Local Database (works offline)
+   - Press `2` for Cloud Database (requires internet)
+4. **Wait 3-5 minutes** the first time (it's downloading everything needed)
 
-## 🛑 Stopping
+### When It's Ready:
+Open your web browser and go to:
+- **Main App:** http://localhost:5173 (this is what users see)
+- **Admin Panel:** http://localhost:3000 (backend controls)
+- **Voice System:** http://localhost:8000 (handles voice features)
 
-Press `Ctrl+C` in the terminal window where the services are running.
+### To Stop Everything:
+Press `Ctrl+C` in the black window (terminal) where it's running.
 
-## 🔄 Daily Use
+## 📝 About the DevBox Branch
 
-1. Start Docker Desktop
-2. Double-click the start script
-3. Make your changes
-4. Press Ctrl+C to stop
+This environment uses a special "devbox" branch - think of it as a testing copy that:
+- Automatically updates with the latest changes from the main system
+- Keeps your testing separate from the live product
+- Syncs every time you start the environment
 
-## 🆘 Troubleshooting
+**You don't need to do anything special** - it handles this automatically!
+
+## 🔧 Troubleshooting
 
 ### "Docker Desktop is not running"
-→ Start Docker Desktop application and wait 30 seconds
+**Solution:** 
+1. Start Docker Desktop from your Start Menu (Windows) or Applications (Mac)
+2. Wait for the whale icon to appear (about 30 seconds)
+3. Try running the start script again
 
-### "Port already in use" error
-→ Another application is using the port. Restart your computer.
+### "Port already in use"
+**Solution:** Something else is using the same address.
+1. Close any other development tools
+2. If that doesn't work, restart your computer
+3. Run the start script again
 
-### Need to start fresh?
-1. Stop everything (Ctrl+C)
-2. Run in terminal: `docker-compose down -v`
-3. Delete the folders: `frontend`, `backend`, `voice-agent`
+### Black window closes immediately
+**Solution:** There's an error starting up.
+1. Right-click the start script
+2. Select "Edit" 
+3. Add `pause` at the very end
+4. Save and run again to see the error message
+
+### Everything seems frozen or slow
+**Solution:** First-time setup takes longer.
+1. Wait up to 10 minutes on first run
+2. Check if Docker Desktop shows activity
+3. If nothing happens after 10 minutes, press Ctrl+C and try again
+
+### Want to start completely fresh?
+1. Stop everything with Ctrl+C
+2. Delete these folders: `frontend`, `backend`, `voice-agent`
+3. In a terminal/command prompt, run: `docker system prune -a` (type 'y' when asked)
 4. Run the start script again
 
-### View database content
-The database runs at `localhost:5432`. You can connect with:
-- Username: `postgres`
-- Password: `postgres`
-- Database: `template1`
+## 💡 Quick Tips
 
-## 📞 Need Help?
+- **First time is always slowest** - it's downloading everything needed (can take 10+ minutes)
+- **Keep Docker Desktop running** - you need it open for SimsBuddy to work
+- **Updates happen automatically** - each time you start, it gets the latest code
+- **Your work is saved** - stopping doesn't lose your testing data
+
+## 📞 Getting Help
 
 If something isn't working:
-1. Make sure Docker Desktop is running
-2. Check the terminal for error messages
-3. Try restarting your computer
-4. Run the start script again
+
+1. **Check Docker Desktop is running** (whale icon visible)
+2. **Check your internet connection** (especially for Railway/Cloud database)
+3. **Take a screenshot of any error messages**
+4. **Note which step you're on when it fails**
+
+### Common Success Signs:
+- Docker Desktop shows "Running" 
+- The terminal shows lots of text scrolling (this is normal!)
+- You see "Services will be available at:" message
+- Browser can open http://localhost:5173
+
+### Still Stuck?
+- Try restarting your computer (fixes 90% of issues!)
+- Make sure no antivirus is blocking Docker
+- Windows users: Run as Administrator if needed
+
+## 🎉 You're Ready!
+
+Once everything is running, you can test SimsBuddy just like a real user would. Any changes developers make will automatically appear when you restart the environment.
+
+Remember: This is for TESTING ONLY - don't enter real patient data or sensitive information!
