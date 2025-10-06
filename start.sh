@@ -220,6 +220,86 @@ setup_devbox_branch() {
             fi
         else
             log_success "$repo_name cloned successfully (devbox branch)"
+            cd "$dir_name"
+            
+            # Fetch all remote branches to ensure we have latest info
+            log "Fetching all remote branches for newly cloned repo..."
+            git fetch --all --prune 2>&1 | tee -a "$LOG_FILE"
+            
+            # Check if newly cloned devbox needs syncing with main
+            echo ""
+            log_highlight "=== CHECKING SYNC STATUS for newly cloned $repo_name ==="
+            compare_branches "devbox" "origin/main" "Initial Status"
+            local branches_synced=$?
+            echo ""
+            
+            if [ $branches_synced -ne 0 ]; then
+                # Determine if we should sync based on user preference
+                local should_sync=false
+                
+                if [ "$SYNC_MODE" = "all" ]; then
+                    should_sync=true
+                    log_info "Auto-syncing newly cloned $repo_name (sync all mode)"
+                elif [ "$SYNC_MODE" = "none" ]; then
+                    should_sync=false
+                    log_warning "Skipping sync for newly cloned $repo_name (skip all mode)"
+                else
+                    # Ask user if they want to sync this newly cloned repo
+                    echo ""
+                    echo -e "${YELLOW}⚠️  Newly cloned $repo_name is out of sync with main branch${NC}"
+                    
+                    # Get divergence details
+                    local ahead=$(git rev-list --count origin/main..devbox 2>/dev/null || echo "0")
+                    local behind=$(git rev-list --count devbox..origin/main 2>/dev/null || echo "0")
+                    
+                    if [ "$behind" != "0" ]; then
+                        echo -e "   ${RED}• devbox is $behind commits behind main (missing updates)${NC}"
+                    fi
+                    if [ "$ahead" != "0" ]; then
+                        echo -e "   ${CYAN}• devbox has $ahead commits not in main (local changes)${NC}"
+                    fi
+                    
+                    echo -e "${CYAN}Do you want to sync devbox with main for $repo_name? (y/n)${NC}"
+                    read -p "Enter your choice: " sync_choice
+                    
+                    if [[ "$sync_choice" =~ ^[Yy]$ ]]; then
+                        should_sync=true
+                        log_info "User chose to sync newly cloned $repo_name"
+                    else
+                        should_sync=false
+                        log_warning "User chose to skip syncing newly cloned $repo_name"
+                    fi
+                fi
+                
+                if [ "$should_sync" = true ]; then
+                    # Merge main into devbox
+                    log "Merging main branch into devbox for newly cloned repo..."
+                    git merge origin/main -m "Sync devbox with main after clone $(date +%Y-%m-%d)" 2>&1 | tee -a "$LOG_FILE"
+                    merge_result=${PIPESTATUS[0]}
+                    
+                    if [ $merge_result -eq 0 ]; then
+                        log_success "Successfully synced newly cloned $repo_name with main"
+                        
+                        # Push the updated devbox branch back to origin
+                        log "Pushing synced devbox branch to origin..."
+                        git push origin devbox 2>&1 | tee -a "$LOG_FILE"
+                        
+                        if [ ${PIPESTATUS[0]} -eq 0 ]; then
+                            log_success "$repo_name devbox branch synced and pushed to origin"
+                        else
+                            log_error "Failed to push devbox branch - check authentication"
+                        fi
+                    else
+                        log_error "Failed to merge main into devbox for newly cloned repo"
+                    fi
+                else
+                    log_warning "Newly cloned $repo_name remains out of sync with main"
+                fi
+            else
+                log_success "Newly cloned $repo_name is already synchronized with main"
+            fi
+            
+            cd "$original_dir"
         fi
     else
         log "Repository $dir_name exists. Updating..."
@@ -274,78 +354,120 @@ setup_devbox_branch() {
         if [ $branches_synced_before -eq 0 ]; then
             log_success "Branches already synchronized, no merge needed"
         else
-            # Merge main into devbox
-            log "Merging main branch into devbox..."
-            git merge origin/main -m "Sync devbox with main $(date +%Y-%m-%d)" 2>&1 | tee -a "$LOG_FILE"
-            merge_result=${PIPESTATUS[0]}
+            # Determine if we should sync based on user preference
+            local should_sync=false
             
-            if [ $merge_result -eq 0 ]; then
-                log_success "Successfully merged main into devbox for $repo_name"
-                
-                echo ""
-                log_highlight "=== POST-MERGE STATUS for $repo_name ==="
-                compare_branches "devbox" "origin/main" "After Merge"
-                local branches_synced_after=$?
-                echo ""
-                
-                if [ $branches_synced_after -eq 0 ]; then
-                    log_success "✨ Merge successful - branches are now synchronized!"
-                else
-                    log_info "Merge completed but devbox has additional commits not in main"
-                fi
-                
-                # Push the updated devbox branch back to origin
-                log "Pushing updated devbox branch to origin..."
-                git push origin devbox 2>&1 | tee -a "$LOG_FILE"
-                
-                if [ ${PIPESTATUS[0]} -eq 0 ]; then
-                    log_success "$repo_name devbox branch synced and pushed to origin"
-                    
-                    # Show merge summary
-                    log "Merge summary - recent commits on devbox:"
-                    git log --oneline -5 | while read line; do
-                        log "  $line"
-                    done
-                else
-                    log_error "Failed to push devbox branch - check authentication"
-                fi
+            if [ "$SYNC_MODE" = "all" ]; then
+                should_sync=true
+                log_info "Auto-syncing $repo_name (sync all mode)"
+            elif [ "$SYNC_MODE" = "none" ]; then
+                should_sync=false
+                log_warning "Skipping sync for $repo_name (skip all mode)"
             else
-                log_error "Merge conflicts detected in $repo_name"
-                log "Attempting to resolve by accepting incoming changes from main..."
+                # Ask user if they want to sync this specific repo
+                echo ""
+                echo -e "${YELLOW}⚠️  $repo_name is out of sync with main branch${NC}"
                 
-                # Show conflict status
-                log "Conflicted files:"
-                git diff --name-only --diff-filter=U | while read file; do
-                    log "  - $file"
-                done
+                # Get divergence details for better user information
+                local ahead=$(git rev-list --count origin/main..devbox 2>/dev/null || echo "0")
+                local behind=$(git rev-list --count devbox..origin/main 2>/dev/null || echo "0")
                 
-                # Abort the merge and try again with strategy
-                git merge --abort 2>/dev/null
+                if [ "$behind" != "0" ]; then
+                    echo -e "   ${RED}• devbox is $behind commits behind main (missing updates)${NC}"
+                fi
+                if [ "$ahead" != "0" ]; then
+                    echo -e "   ${CYAN}• devbox has $ahead commits not in main (local changes)${NC}"
+                fi
                 
-                log "Retrying merge with 'theirs' strategy (accept main changes)..."
-                git merge origin/main -X theirs -m "Force sync devbox with main (accepted main changes) $(date +%Y-%m-%d)" 2>&1 | tee -a "$LOG_FILE"
+                echo -e "${CYAN}Do you want to sync devbox with main for $repo_name? (y/n)${NC}"
+                read -p "Enter your choice: " sync_choice
                 
-                if [ ${PIPESTATUS[0]} -eq 0 ]; then
-                    log_success "Resolved conflicts by accepting main branch changes"
+                if [[ "$sync_choice" =~ ^[Yy]$ ]]; then
+                    should_sync=true
+                    log_info "User chose to sync $repo_name"
+                else
+                    should_sync=false
+                    log_warning "User chose to skip syncing $repo_name"
+                fi
+            fi
+            
+            if [ "$should_sync" = true ]; then
+                # Merge main into devbox
+                log "Merging main branch into devbox..."
+                git merge origin/main -m "Sync devbox with main $(date +%Y-%m-%d)" 2>&1 | tee -a "$LOG_FILE"
+                merge_result=${PIPESTATUS[0]}
+            
+                if [ $merge_result -eq 0 ]; then
+                    log_success "Successfully merged main into devbox for $repo_name"
                     
                     echo ""
-                    log_highlight "=== POST-CONFLICT-RESOLUTION STATUS for $repo_name ==="
-                    compare_branches "devbox" "origin/main" "After Conflict Resolution"
+                    log_highlight "=== POST-MERGE STATUS for $repo_name ==="
+                    compare_branches "devbox" "origin/main" "After Merge"
+                    local branches_synced_after=$?
                     echo ""
                     
-                    # Push the resolved merge
+                    if [ $branches_synced_after -eq 0 ]; then
+                        log_success "✨ Merge successful - branches are now synchronized!"
+                    else
+                        log_info "Merge completed but devbox has additional commits not in main"
+                    fi
+                    
+                    # Push the updated devbox branch back to origin
+                    log "Pushing updated devbox branch to origin..."
                     git push origin devbox 2>&1 | tee -a "$LOG_FILE"
                     
                     if [ ${PIPESTATUS[0]} -eq 0 ]; then
-                        log_success "$repo_name devbox branch synced (with conflict resolution) and pushed"
+                        log_success "$repo_name devbox branch synced and pushed to origin"
+                        
+                        # Show merge summary
+                        log "Merge summary - recent commits on devbox:"
+                        git log --oneline -5 | while read line; do
+                            log "  $line"
+                        done
                     else
-                        log_error "Failed to push resolved changes"
+                        log_error "Failed to push devbox branch - check authentication"
                     fi
                 else
-                    log_error "Could not automatically resolve conflicts for $repo_name"
-                    log "Manual intervention required. Resetting to remote devbox..."
-                    git reset --hard origin/devbox
+                    log_error "Merge conflicts detected in $repo_name"
+                    log "Attempting to resolve by accepting incoming changes from main..."
+                    
+                    # Show conflict status
+                    log "Conflicted files:"
+                    git diff --name-only --diff-filter=U | while read file; do
+                        log "  - $file"
+                    done
+                    
+                    # Abort the merge and try again with strategy
+                    git merge --abort 2>/dev/null
+                    
+                    log "Retrying merge with 'theirs' strategy (accept main changes)..."
+                    git merge origin/main -X theirs -m "Force sync devbox with main (accepted main changes) $(date +%Y-%m-%d)" 2>&1 | tee -a "$LOG_FILE"
+                    
+                    if [ ${PIPESTATUS[0]} -eq 0 ]; then
+                        log_success "Resolved conflicts by accepting main branch changes"
+                        
+                        echo ""
+                        log_highlight "=== POST-CONFLICT-RESOLUTION STATUS for $repo_name ==="
+                        compare_branches "devbox" "origin/main" "After Conflict Resolution"
+                        echo ""
+                        
+                        # Push the resolved merge
+                        git push origin devbox 2>&1 | tee -a "$LOG_FILE"
+                        
+                        if [ ${PIPESTATUS[0]} -eq 0 ]; then
+                            log_success "$repo_name devbox branch synced (with conflict resolution) and pushed"
+                        else
+                            log_error "Failed to push resolved changes"
+                        fi
+                    else
+                        log_error "Could not automatically resolve conflicts for $repo_name"
+                        log "Manual intervention required. Resetting to remote devbox..."
+                        git reset --hard origin/devbox
+                    fi
                 fi
+            else
+                log_warning "Skipping sync for $repo_name - devbox remains out of sync with main"
+                log "Devbox branch kept as-is"
             fi
         fi
         
@@ -426,6 +548,11 @@ generate_summary() {
         echo -e "${GREEN}✨ All repositories are synchronized with main!${NC}"
     else
         echo -e "${YELLOW}⚠️  Some repositories are not fully synchronized${NC}"
+        if [ "$SYNC_MODE" = "none" ]; then
+            echo "  Syncing was skipped for all repositories as requested"
+        elif [ "$SYNC_MODE" = "ask" ]; then
+            echo "  Some repositories may have been skipped based on your choices"
+        fi
         echo "  Run this script again to attempt another sync"
     fi
     echo -e "${BLUE}=======================================${NC}"
@@ -462,6 +589,34 @@ echo ""
 echo -e "${BLUE}=======================================${NC}"
 echo -e "${YELLOW}🔄 Managing devbox branches...${NC}"
 echo -e "${BLUE}=======================================${NC}"
+
+# Ask user about sync preference
+echo ""
+echo -e "${CYAN}How would you like to handle repository syncing?${NC}"
+echo "1) Ask for each repository individually"
+echo "2) Sync all repositories automatically"
+echo "3) Skip syncing for all repositories"
+echo ""
+read -p "Enter your choice (1-3): " sync_preference
+
+case $sync_preference in
+    1)
+        log_info "Will ask for each repository individually"
+        SYNC_MODE="ask"
+        ;;
+    2)
+        log_info "Will sync all repositories automatically"
+        SYNC_MODE="all"
+        ;;
+    3)
+        log_info "Will skip syncing for all repositories"
+        SYNC_MODE="none"
+        ;;
+    *)
+        log_warning "Invalid choice. Will ask for each repository"
+        SYNC_MODE="ask"
+        ;;
+esac
 
 # Setup/update each repository's devbox branch
 setup_devbox_branch "Frontend" "$FRONTEND_REPO" "frontend"
