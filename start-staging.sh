@@ -241,6 +241,56 @@ preflight_check() {
     fi
 }
 
+# Cleanup existing services
+cleanup_services() {
+    echo -e "${BOLD}${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BOLD}  ${WARN} CLEANUP WARNING${NC}"
+    echo -e "${BOLD}${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo -e "  ${FIRE} The following will be ${BOLD}DELETED${NC}:"
+    echo ""
+    echo -e "  ${CROSS} All running containers:"
+    echo -e "      - Frontend (React/Vite)"
+    echo -e "      - Backend (Fastify API)"
+    echo -e "      - Voice Agent (AI system)"
+    echo -e "      - Redis (message broker)"
+    echo ""
+    echo -e "  ${CROSS} All persistent volumes and data:"
+    echo -e "      - Redis data (sessions, cache)"
+    echo -e "      - Voice agent logs"
+    echo -e "      - Node modules volumes"
+    echo ""
+    echo -e "  ${CHECK} Repositories will be ${BOLD}KEPT${NC} (only updated)"
+    echo ""
+    echo -e "${BOLD}${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo -e "${BOLD}${YELLOW}Do you want to proceed with cleanup?${NC} (y/N)"
+    read -p "  " confirm_cleanup
+
+    if [[ ! "$confirm_cleanup" =~ ^[Yy]$ ]]; then
+        echo ""
+        log_info "Cleanup cancelled by user"
+        echo -e "${CYAN}Exiting without making changes. Run again when ready.${NC}"
+        echo ""
+        exit 0
+    fi
+
+    echo ""
+    log_info "Starting cleanup..."
+    echo ""
+    echo -e "  ${GEAR} Stopping all services and removing volumes..."
+
+    docker-compose -f docker-compose.staging.yml down -v >> "$LOG_FILE" 2>&1
+
+    if [ $? -eq 0 ]; then
+        log_success "Cleanup completed successfully"
+        echo ""
+    else
+        log_warning "Cleanup completed with warnings (some services may not have been running)"
+        echo ""
+    fi
+}
+
 # Show what will happen
 show_plan() {
     echo -e "${BOLD}${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -513,6 +563,7 @@ show_success() {
 main() {
     show_banner
     preflight_check
+    cleanup_services
     show_plan
     select_git_protocol
     download_code
