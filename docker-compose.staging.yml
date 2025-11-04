@@ -1,0 +1,162 @@
+# docker-compose.staging.yml - Staging Environment with Railway Database
+# This configuration is for development testing against the staging branch
+# Uses remote Railway PostgreSQL database (no local database service)
+# All services have hot reloading enabled for rapid development
+
+services:
+  # Redis - Message broker and state store for Celery
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      # Mount frontend code directory for hot module replacement (HMR)
+      - ./frontend:/app
+      # Use named volume for node_modules to avoid platform-specific issues
+      - frontend_node_modules:/app/node_modules
+    environment:
+      # Backend API URL - adjust based on your staging backend
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:3000}
+      # WebSocket URL for voice agent
+      - VITE_WS_URL=${VITE_WS_URL:-ws://localhost:8000}
+      # Firebase configuration from .env
+      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}
+      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}
+      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}
+      - VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET}
+      - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID}
+      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID}
+      - VITE_FIREBASE_MEASUREMENT_ID=${VITE_FIREBASE_MEASUREMENT_ID}
+      # EmailJS configuration from .env
+      - VITE_EMAIL_JS_PUBLIC_KEY=${VITE_EMAIL_JS_PUBLIC_KEY}
+      - VITE_EMAIL_JS_SERVICE_ID=${VITE_EMAIL_JS_SERVICE_ID}
+      - VITE_EMAIL_JS_TEMPLATE_ID=${VITE_EMAIL_JS_TEMPLATE_ID}
+    ports:
+      - "5173:5173"
+    # Vite dev server with HMR on 0.0.0.0 to allow access from host
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+      - voice-agent
+
+  backend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      # Mount backend code directory for nodemon hot reload
+      - ./backend:/app
+      # Use named volume for node_modules to avoid platform-specific issues
+      - backend_node_modules:/app/node_modules
+    environment:
+      # Railway PostgreSQL database URL (staging environment)
+      # Make sure this points to your staging database, not production
+      - DATABASE_URL=${DATABASE_URL}
+      # JWT secret for authentication
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      # Voice agent service URLs (internal Docker network)
+      - VOICE_ASSISTANT_API_URL=http://voice-agent:8000
+      - VOICE_ASSISTANT_WS_URL=ws://voice-agent:8000/ws/conversation
+      # Shared secret for voice agent communication
+      - VOICE_AGENT_SHARED_SECRET=${VOICE_AGENT_SHARED_SECRET}
+      # LiveKit configuration (voice-agent orchestrator URL)
+      - LIVEKIT_SERVICE_URL=http://voice-agent:8000
+      # AI service API keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      # Stripe configuration
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      # Email configuration
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+    ports:
+      - "3000:3000"
+    # Install deps, generate Prisma client, start dev server with nodemon
+    # NOTE: No migrations run here - database should already be migrated
+    command: sh -c "npm install && npx prisma generate && npm run dev"
+
+  voice-agent:
+    build:
+      context: ./voice-agent
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Port (for supervisor compatibility)
+      - PORT=8000
+      # Redis connection (internal Docker network)
+      - REDIS_URL=redis://redis:6379/0
+      # LiveKit WebRTC configuration
+      - LIVEKIT_URL=${LIVEKIT_URL}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
+      # AI Service API Keys
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - ASSEMBLY_API_KEY=${ASSEMBLY_API_KEY}
+      - INWORLD_API_KEY=${INWORLD_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Railway PostgreSQL database URL (for transcript storage)
+      - DATABASE_URL=${DATABASE_URL}
+      # Backend service URL (internal Docker network)
+      - BACKEND_URL=http://backend:3000
+      # Shared secret for backend communication
+      - BACKEND_SHARED_SECRET=${VOICE_AGENT_SHARED_SECRET}
+      # Orchestrator configuration
+      - MAX_BOTS=50
+      - SESSION_TIMEOUT=1800000
+      - BOT_STARTUP_TIMEOUT=30
+      # Python script path (for agent spawning)
+      - PYTHON_SCRIPT_PATH=/app/backend/agent/voice_assistant.py
+      # Python path for absolute imports
+      - PYTHONPATH=/app
+      # Logging configuration
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-console}
+      - SERVICE_NAME=orchestrator
+      - AGENT_LOG_DIR=/var/log/voice-agents
+      # Optional AI service keys
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - ELEVEN_API_KEY=${ELEVEN_API_KEY}
+      - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY}
+      - SPEECHIFY_API_KEY=${SPEECHIFY_API_KEY}
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+      - RIME_API_KEY=${RIME_API_KEY}
+      - RIVA_API_KEY=${RIVA_API_KEY}
+      - GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}
+      - GOOGLE_PRIVATE_KEY_ID=${GOOGLE_PRIVATE_KEY_ID}
+      - GOOGLE_PRIVATE_KEY=${GOOGLE_PRIVATE_KEY}
+      - GOOGLE_CLIENT_EMAIL=${GOOGLE_CLIENT_EMAIL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_X509_CERT_URL=${GOOGLE_CLIENT_X509_CERT_URL}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      # Mount backend directory for development/hot reload
+      - ./voice-agent/backend:/app/backend
+      # Voice agent logs (persistent storage)
+      - voice_agent_logs:/var/log/voice-agents
+
+# Named volumes for dependency caching and performance
+# These persist between container restarts to avoid reinstalling dependencies
+volumes:
+  redis_data:
+  frontend_node_modules:
+  backend_node_modules:
+  voice_agent_logs:

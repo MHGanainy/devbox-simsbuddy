@@ -10,7 +10,7 @@ Welcome! This guide will help you set up the SimsBuddy staging environment in ju
 2. [First Time Setup](#-first-time-setup)
 3. [Daily Usage](#-daily-usage)
 4. [Updating Code](#-updating-code)
-5. [Troubleshooting](#️-troubleshooting)
+5. [Troubleshooting](#-troubleshooting)
 6. [FAQ](#-frequently-asked-questions)
 7. [Additional Resources](#-additional-resources)
 
@@ -46,13 +46,13 @@ git --version
 - **Windows:** [Download Git for Windows](https://git-scm.com/download/win)
 - **Linux:** `sudo apt-get install git` (Ubuntu/Debian) or `sudo yum install git` (CentOS/RHEL)
 
-### 3. **Environment File** (.env)
-You need a `.env` file with API keys and database credentials.
+### 3. **Text Editor** (Recommended)
+- **VS Code:** [Download VS Code](https://code.visualstudio.com/) (Recommended)
+- Or any text editor you prefer (Sublime, Atom, Notepad++, etc.)
 
-**If you don't have one:**
-1. Copy `.env.example` to `.env`
-2. Fill in the required values (see below for what you need)
-3. Ask your team lead for the API keys and database URL
+### 4. **Disk Space**
+- At least **10 GB free** disk space
+- The setup script will check this for you
 
 ---
 
@@ -77,23 +77,32 @@ cd dev-environment
 cp .env.example .env
 
 # Edit it with your favorite text editor
-# VS Code: code .env
-# Nano: nano .env
-# Vim: vim .env
+code .env              # VS Code
+nano .env              # Nano
+vim .env               # Vim
+notepad .env           # Windows Notepad
 ```
 
 **Fill in these required values:**
-- `DATABASE_URL` - Get from Railway dashboard
-- `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` - Get from https://cloud.livekit.io/
-- `GROQ_API_KEY` - Get from https://console.groq.com/keys
-- `ASSEMBLY_API_KEY` - Get from https://www.assemblyai.com/app/account
-- `INWORLD_API_KEY` - Get from https://studio.inworld.ai/workspaces
-- `OPENAI_API_KEY` - Get from https://platform.openai.com/api-keys
-- Firebase variables - Get from Firebase Console
-- EmailJS variables - Get from https://dashboard.emailjs.com/admin
-- Stripe keys - Get from https://dashboard.stripe.com/test/apikeys
 
-**Optional:** Leave other variables blank if you don't need them.
+| Variable | Where to Get It |
+|----------|----------------|
+| `DATABASE_URL` | Railway dashboard → PostgreSQL → Connect |
+| `LIVEKIT_URL` | https://cloud.livekit.io/ → Project Settings |
+| `LIVEKIT_API_KEY` | https://cloud.livekit.io/ → Project Settings → Keys |
+| `LIVEKIT_API_SECRET` | https://cloud.livekit.io/ → Project Settings → Keys |
+| `GROQ_API_KEY` | https://console.groq.com/keys |
+| `ASSEMBLY_API_KEY` | https://www.assemblyai.com/app/account |
+| `INWORLD_API_KEY` | https://studio.inworld.ai/workspaces |
+| `OPENAI_API_KEY` | https://platform.openai.com/api-keys |
+| `VITE_FIREBASE_*` (6 vars) | Firebase Console → Project Settings → General |
+| `VITE_EMAIL_JS_*` (3 vars) | https://dashboard.emailjs.com/admin |
+| `STRIPE_SECRET_KEY` | https://dashboard.stripe.com/test/apikeys |
+| `STRIPE_WEBHOOK_SECRET` | https://dashboard.stripe.com/test/webhooks |
+
+**Optional:** Leave other variables (DEEPGRAM, ELEVEN, AWS, Google Cloud) blank if you don't need them.
+
+**Tip:** Ask your team lead for shared development API keys to save time!
 
 ### Step 4: Run the Setup Script
 
@@ -108,7 +117,7 @@ cp .env.example .env
 4. ✅ Start all services
 5. ✅ Verify everything is working
 
-**Expected time:** 3-5 minutes (first run)
+**Expected time:** 3-5 minutes (first run), ~1 minute for subsequent runs
 
 ---
 
@@ -123,6 +132,7 @@ Once you've completed the first-time setup, here's how to use the staging enviro
 ```
 
 This will:
+- Check prerequisites are still met
 - Pull latest code from staging branch
 - Start all services
 - Show you the URLs when ready
@@ -152,12 +162,16 @@ docker-compose -f docker-compose.staging.yml down
 docker-compose -f docker-compose.staging.yml ps
 ```
 
-You should see all 4 services with "Up" status.
+You should see all 4 services with "Up" status:
+- `dev-environment-redis-1` - Up (healthy)
+- `dev-environment-frontend-1` - Up
+- `dev-environment-backend-1` - Up
+- `dev-environment-voice-agent-1` - Up
 
 ### Viewing Logs
 
 ```bash
-# View all logs
+# View all logs (live updates)
 docker-compose -f docker-compose.staging.yml logs -f
 
 # View specific service logs
@@ -168,6 +182,9 @@ docker-compose -f docker-compose.staging.yml logs redis -f
 
 # View last 50 lines
 docker-compose -f docker-compose.staging.yml logs --tail=50
+
+# Stop following logs
+Press Ctrl+C
 ```
 
 ### Restarting a Single Service
@@ -241,19 +258,17 @@ This opens an interactive menu:
 
 ## ⏱️ What to Expect
 
-The setup process takes about **3-5 minutes** the first time (subsequent runs are faster).
-
-### Step-by-Step Timeline:
+### First Time Setup Timeline
 
 | Step | What's Happening | Time |
 |------|------------------|------|
-| 🔍 **Checking Prerequisites** | Making sure Docker and Git are ready | 10 seconds |
-| 📥 **Downloading Code** | Getting the latest code from GitHub | 30-60 seconds |
-| 🏗️ **Building Services** | Building the voice-agent Docker image | 2-3 minutes (first time only) |
-| 🚀 **Starting Services** | Starting Frontend, Backend, Voice-Agent, Redis | 30-40 seconds |
+| 🔍 **Pre-flight Checks** | Verifying Docker, Git, ports, .env | 10 seconds |
+| 📥 **Downloading Code** | Cloning 3 repos from GitHub | 30-60 seconds |
+| 🏗️ **Building Services** | Building voice-agent Docker image | 2-3 minutes |
+| 🚀 **Starting Services** | Starting all 4 containers | 30-40 seconds |
 | ✅ **Ready!** | All services running | Done! |
 
-**Progress indicators will show you exactly where you are.**
+**Total:** 3-5 minutes first time, ~1 minute after that
 
 ---
 
@@ -288,7 +303,7 @@ Press Ctrl+C to stop all services
 
 ---
 
-## 🛠️ Troubleshooting Common Issues
+## 🛠️ Troubleshooting
 
 ### Problem: "Docker Desktop is not running"
 
@@ -351,6 +366,8 @@ git config --global user.email "your.email@example.com"
 3. Fill in the required values (ask your team lead for API keys)
 4. Run `./start-staging.sh` again
 
+**Note:** The start-staging.sh script will offer to create .env for you automatically!
+
 ---
 
 ### Problem: "Services start but pages won't load"
@@ -377,98 +394,57 @@ git config --global user.email "your.email@example.com"
    ```bash
    docker system prune -a
    ```
+   **Warning:** This removes all unused Docker images
 4. Run `./start-staging.sh` again
 
 ---
 
-## 🛑 How to Stop the Services
+### Problem: "Hot reload not working"
 
-### Option 1: Keyboard Shortcut (Recommended)
-Press **Ctrl+C** in the terminal where the script is running.
-
-### Option 2: Manual Stop
-```bash
-docker-compose -f docker-compose.staging.yml down
-```
-
----
-
-## 🔄 How to Restart
-
-Simply run the script again:
-```bash
-./start-staging.sh
-```
-
-**It will be much faster the second time** because Docker caches the images.
+**Solution:**
+1. Make sure you're editing files in the correct directories:
+   - Frontend: `./frontend/src/...`
+   - Backend: `./backend/src/...`
+   - Voice-agent: `./voice-agent/backend/...`
+2. Check Docker Desktop → Settings → Resources → File Sharing
+3. Restart the affected service:
+   ```bash
+   docker-compose -f docker-compose.staging.yml restart frontend
+   ```
 
 ---
 
-## 💡 Tips for Success
+### Problem: "Database connection errors"
 
-### ✅ DO:
-- Keep Docker Desktop running
-- Wait for the "All services running!" message
-- Check the browser URLs to verify everything works
-- Ask for help if you see errors you don't understand
-
-### ❌ DON'T:
-- Close Docker Desktop while services are running
-- Change the .env file while services are running (stop first, then change)
-- Delete Docker containers manually (use the stop command)
-
----
-
-## 📚 What's Running?
-
-When you start the staging environment, you're running 4 services:
-
-| Service | What It Does | Port |
-|---------|--------------|------|
-| **Frontend** | React web application (what users see) | 5173 |
-| **Backend** | Fastify API server (handles data and logic) | 3000 |
-| **Voice Agent** | AI voice conversation system | 8000 |
-| **Redis** | In-memory database for sessions | 6379 |
-
-All services work together to provide the full SimsBuddy experience.
+**Solution:**
+1. Check your `.env` file has correct `DATABASE_URL`
+2. Verify you can access Railway database:
+   ```bash
+   # From backend container
+   docker exec -it dev-environment-backend-1 sh
+   npx prisma studio
+   # Should open Prisma Studio if DB connection works
+   ```
+3. Ask team lead to verify Railway database is accessible
 
 ---
 
-## 🆘 Need More Help?
+### Problem: "Voice-agent service won't start"
 
-### Check the Logs:
-If something isn't working, check the logs to see what's happening:
-
-```bash
-# View all logs
-docker-compose -f docker-compose.staging.yml logs
-
-# View logs for a specific service
-docker-compose -f docker-compose.staging.yml logs frontend
-docker-compose -f docker-compose.staging.yml logs backend
-docker-compose -f docker-compose.staging.yml logs voice-agent
-```
-
-### Common Log Locations:
-- Script logs: `logs/staging_YYYYMMDD_HHMMSS.log`
-- Docker logs: Use the commands above
-
-### Ask for Help:
-If you're stuck, reach out to your team with:
-1. What step failed
-2. The error message you saw
-3. Your log file (from the `logs/` directory)
-
----
-
-## 🎉 You're All Set!
-
-Once you see "All services running!" you're ready to:
-- Access the frontend at http://localhost:5173
-- Test API endpoints at http://localhost:3000
-- Develop and see changes in real-time (hot reload is enabled)
-
-**Happy coding!** 🚀
+**Solution:**
+1. Check Redis is running:
+   ```bash
+   docker-compose -f docker-compose.staging.yml ps redis
+   # Should show "Up (healthy)"
+   ```
+2. Check voice-agent logs:
+   ```bash
+   docker-compose -f docker-compose.staging.yml logs voice-agent --tail=50
+   ```
+3. Restart voice-agent:
+   ```bash
+   docker-compose -f docker-compose.staging.yml restart voice-agent
+   ```
 
 ---
 
@@ -508,8 +484,9 @@ Once you see "All services running!" you're ready to:
 - This setup is for staging only
 
 ### Q: Do I need all the API keys?
-**A:** Required: DATABASE_URL, LIVEKIT_*, GROQ, ASSEMBLY, INWORLD, OPENAI, Firebase, EmailJS, Stripe
-Optional: DEEPGRAM, ELEVEN, AWS, Google Cloud, etc.
+**A:**
+- **Required:** DATABASE_URL, LIVEKIT_*, GROQ_API_KEY, ASSEMBLY_API_KEY, INWORLD_API_KEY, OPENAI_API_KEY, Firebase, EmailJS, Stripe
+- **Optional:** DEEPGRAM, ELEVEN, AWS, Google Cloud, etc.
 
 ### Q: How do I get API keys?
 **A:** See the links in `.env.example` or ask your team lead for shared development keys.
@@ -540,7 +517,24 @@ docker-compose -f docker-compose.staging.yml down -v
 ```
 
 ### Q: Where are the logs saved?
-**A:** Check the `logs/` directory. Each run creates a timestamped log file.
+**A:** Check the `logs/` directory. Each run creates a timestamped log file like `logs/staging_20251104_163000.log`
+
+### Q: What services are running?
+**A:** 4 services:
+- **Redis** - Session storage and Celery message broker
+- **Frontend** - React web app with Vite
+- **Backend** - Fastify API server with Prisma ORM
+- **Voice-Agent** - AI voice conversation system (FastAPI + Celery)
+
+### Q: How do I update just one service?
+**A:** Use the update manager:
+```bash
+./update-staging.sh
+# Then select [2] for frontend, [3] for backend, or [4] for voice-agent
+```
+
+### Q: What if I accidentally delete something?
+**A:** The update-staging.sh script backs up your .env file before every update. Check for `.env.backup.*` files in the directory.
 
 ---
 
@@ -557,6 +551,7 @@ docker-compose -f docker-compose.staging.yml down -v
 - **LiveKit Documentation:** https://docs.livekit.io/
 - **Fastify Documentation:** https://www.fastify.io/docs/
 - **React Documentation:** https://react.dev/
+- **Prisma Documentation:** https://www.prisma.io/docs
 
 ### Getting Help
 1. Check the [Troubleshooting](#-troubleshooting) section above
@@ -570,18 +565,18 @@ docker-compose -f docker-compose.staging.yml down -v
 
 ```bash
 # First time setup
-cp .env.example .env    # Create config
-# (edit .env)           # Fill in values
-./start-staging.sh      # Start everything
+cp .env.example .env              # Create config
+# (edit .env with real values)   # Fill in API keys
+./start-staging.sh                # Start everything
 
 # Daily usage
-./start-staging.sh      # Start services
-./update-staging.sh     # Update code
-./stop-staging.sh       # Stop services
+./start-staging.sh                # Start services
+./update-staging.sh               # Update code
+./stop-staging.sh                 # Stop services
 
 # Checking status
-docker-compose -f docker-compose.staging.yml ps      # Service status
-docker-compose -f docker-compose.staging.yml logs -f # View logs
+docker-compose -f docker-compose.staging.yml ps           # Service status
+docker-compose -f docker-compose.staging.yml logs -f      # View logs
 
 # Individual service control
 docker-compose -f docker-compose.staging.yml restart backend
