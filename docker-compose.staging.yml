@@ -22,31 +22,32 @@ services:
     image: node:20-alpine
     working_dir: /app
     volumes:
-      # Mount frontend code directory for hot module replacement (HMR)
-      - ./frontend:/app
-      # Use named volume for node_modules to avoid platform-specific issues
+      - ./frontend-ssr:/app
       - frontend_node_modules:/app/node_modules
+      - frontend_next_cache:/app/.next
     environment:
-      # Backend API URL - adjust based on your staging backend
-      - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:3000}
-      # WebSocket URL for voice agent
-      - VITE_WS_URL=${VITE_WS_URL:-ws://localhost:8000}
-      # Firebase configuration from .env
-      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}
-      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}
-      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}
-      - VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET}
-      - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID}
-      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID}
-      - VITE_FIREBASE_MEASUREMENT_ID=${VITE_FIREBASE_MEASUREMENT_ID}
-      # EmailJS configuration from .env
-      - VITE_EMAIL_JS_PUBLIC_KEY=${VITE_EMAIL_JS_PUBLIC_KEY}
-      - VITE_EMAIL_JS_SERVICE_ID=${VITE_EMAIL_JS_SERVICE_ID}
-      - VITE_EMAIL_JS_TEMPLATE_ID=${VITE_EMAIL_JS_TEMPLATE_ID}
+      # Browser-visible backend URL (baked into client code by Next.js)
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3000}
+      # SSR-side backend URL (Docker internal DNS; localhost inside container != host)
+      - NEXT_PUBLIC_SERVER_API_BASE_URL=${NEXT_PUBLIC_SERVER_API_BASE_URL:-http://backend:3000}
+      # Canonical site URL (used in SEO/metadata)
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:5173}
+      # Google OAuth (optional in dev)
+      - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+      # Analytics / error reporting (optional)
+      - NEXT_PUBLIC_POSTHOG_KEY=${NEXT_PUBLIC_POSTHOG_KEY}
+      - NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
+      # EmailJS
+      - NEXT_PUBLIC_EMAIL_JS_PUBLIC_KEY=${NEXT_PUBLIC_EMAIL_JS_PUBLIC_KEY}
+      - NEXT_PUBLIC_EMAIL_JS_SERVICE_ID=${NEXT_PUBLIC_EMAIL_JS_SERVICE_ID}
+      - NEXT_PUBLIC_EMAIL_JS_TEMPLATE_ID=${NEXT_PUBLIC_EMAIL_JS_TEMPLATE_ID}
+      - NEXT_PUBLIC_EMAIL_JS_CONTACT_US_TEMPLATE_ID=${NEXT_PUBLIC_EMAIL_JS_CONTACT_US_TEMPLATE_ID}
     ports:
       - "5173:5173"
-    # Vite dev server with HMR on 0.0.0.0 to allow access from host
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    # Yarn 4 Berry is vendored in .yarn/releases; corepack activates it.
+    # Next.js dev server on 5173 (3000 is taken by backend).
+    command: sh -c "corepack enable && yarn install --immutable && yarn dev --port 5173 --hostname 0.0.0.0"
     depends_on:
       - backend
       - voice-agent
@@ -159,5 +160,6 @@ services:
 volumes:
   redis_data:
   frontend_node_modules:
+  frontend_next_cache:
   backend_node_modules:
   voice_agent_logs:

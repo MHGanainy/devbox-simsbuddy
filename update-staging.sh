@@ -141,7 +141,7 @@ show_status() {
 
     UPDATES_AVAILABLE=false
 
-    check_repo_status "Frontend" "frontend"
+    check_repo_status "Frontend" "frontend-ssr"
     check_repo_status "Backend" "backend"
     check_repo_status "Voice Agent" "voice-agent"
 
@@ -401,7 +401,7 @@ main() {
     show_banner
 
     # Check if repositories exist
-    if [ ! -d "frontend" ] && [ ! -d "backend" ] && [ ! -d "voice-agent" ]; then
+    if [ ! -d "frontend-ssr" ] && [ ! -d "backend" ] && [ ! -d "voice-agent" ]; then
         log_error "No repositories found. Run ./start-staging.sh first to clone repositories."
         exit 1
     fi
@@ -419,7 +419,7 @@ main() {
                 log_info "Updating all repositories..."
                 echo ""
 
-                update_repo "Frontend" "frontend"
+                update_repo "Frontend" "frontend-ssr"
                 if [ $? -eq 0 ]; then
                     restart_service "frontend"
                 fi
@@ -439,7 +439,7 @@ main() {
                 read -p "Press Enter to continue..."
                 ;;
             2)
-                update_repo "Frontend" "frontend"
+                update_repo "Frontend" "frontend-ssr"
                 if [ $? -eq 0 ]; then
                     restart_service "frontend"
                 fi

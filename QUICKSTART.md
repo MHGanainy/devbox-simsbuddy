@@ -95,8 +95,8 @@ notepad .env           # Windows Notepad
 | `ASSEMBLY_API_KEY` | https://www.assemblyai.com/app/account |
 | `INWORLD_API_KEY` | https://studio.inworld.ai/workspaces |
 | `OPENAI_API_KEY` | https://platform.openai.com/api-keys |
-| `VITE_FIREBASE_*` (6 vars) | Firebase Console → Project Settings → General |
-| `VITE_EMAIL_JS_*` (3 vars) | https://dashboard.emailjs.com/admin |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs |
+| `NEXT_PUBLIC_EMAIL_JS_*` (4 vars) | https://dashboard.emailjs.com/admin |
 | `STRIPE_SECRET_KEY` | https://dashboard.stripe.com/test/apikeys |
 | `STRIPE_WEBHOOK_SECRET` | https://dashboard.stripe.com/test/webhooks |
 
@@ -403,7 +403,7 @@ git config --global user.email "your.email@example.com"
 
 **Solution:**
 1. Make sure you're editing files in the correct directories:
-   - Frontend: `./frontend/src/...`
+   - Frontend: `./frontend-ssr/src/...`
    - Backend: `./backend/src/...`
    - Voice-agent: `./voice-agent/backend/...`
 2. Check Docker Desktop → Settings → Resources → File Sharing
@@ -485,7 +485,7 @@ git config --global user.email "your.email@example.com"
 
 ### Q: Do I need all the API keys?
 **A:**
-- **Required:** DATABASE_URL, LIVEKIT_*, GROQ_API_KEY, ASSEMBLY_API_KEY, INWORLD_API_KEY, OPENAI_API_KEY, Firebase, EmailJS, Stripe
+- **Required:** DATABASE_URL, LIVEKIT_*, GROQ_API_KEY, ASSEMBLY_API_KEY, INWORLD_API_KEY, OPENAI_API_KEY, NEXT_PUBLIC_GOOGLE_CLIENT_ID, NEXT_PUBLIC_EMAIL_JS_*, Stripe
 - **Optional:** DEEPGRAM, ELEVEN, AWS, Google Cloud, etc.
 
 ### Q: How do I get API keys?
@@ -522,7 +522,7 @@ docker-compose -f docker-compose.staging.yml down -v
 ### Q: What services are running?
 **A:** 4 services:
 - **Redis** - Session storage and Celery message broker
-- **Frontend** - React web app with Vite
+- **Frontend** - Next.js 16 SSR (React 19, Turbopack, Ant Design)
 - **Backend** - Fastify API server with Prisma ORM
 - **Voice-Agent** - AI voice conversation system (FastAPI + Celery)
 

@@ -1,5 +1,5 @@
 # Cloned repositories
-frontend/
+frontend-ssr/
 backend/
 voice-agent/
 
@@ -63,3 +63,5 @@ build/
 *.backup
 *.bak
 .env.backup.*
+.claude/*
+thoughts/*

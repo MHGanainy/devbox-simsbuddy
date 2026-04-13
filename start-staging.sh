@@ -250,7 +250,7 @@ cleanup_services() {
     echo -e "  ${FIRE} The following will be ${BOLD}DELETED${NC}:"
     echo ""
     echo -e "  ${CROSS} All running containers:"
-    echo -e "      - Frontend (React/Vite)"
+    echo -e "      - Frontend (Next.js SSR)"
     echo -e "      - Backend (Fastify API)"
     echo -e "      - Voice Agent (AI system)"
     echo -e "      - Redis (message broker)"
@@ -328,7 +328,7 @@ select_git_protocol() {
     case $git_choice in
         1)
             log_success "Using HTTPS for Git"
-            FRONTEND_REPO="https://github.com/omarelmoghazy/simsbuddy.git"
+            FRONTEND_REPO="https://github.com/omarelmoghazy/simsbuddy-ssr.git"
             BACKEND_REPO="https://github.com/MHGanainy/mvp-backend.git"
             VOICE_REPO="https://github.com/MHGanainy/simsbuddy-voice-agent.git"
             ;;
@@ -340,19 +340,19 @@ select_git_protocol() {
                 echo -e "${INFO} To use SSH in the future, set up an SSH key:"
                 echo -e "   https://docs.github.com/en/authentication/connecting-to-github-with-ssh"
                 echo ""
-                FRONTEND_REPO="https://github.com/omarelmoghazy/simsbuddy.git"
+                FRONTEND_REPO="https://github.com/omarelmoghazy/simsbuddy-ssr.git"
                 BACKEND_REPO="https://github.com/MHGanainy/mvp-backend.git"
                 VOICE_REPO="https://github.com/MHGanainy/simsbuddy-voice-agent.git"
             else
                 log_success "Using SSH for Git"
-                FRONTEND_REPO="git@github.com:omarelmoghazy/simsbuddy.git"
+                FRONTEND_REPO="git@github.com:omarelmoghazy/simsbuddy-ssr.git"
                 BACKEND_REPO="git@github.com:MHGanainy/mvp-backend.git"
                 VOICE_REPO="git@github.com:MHGanainy/simsbuddy-voice-agent.git"
             fi
             ;;
         *)
             log_warning "Invalid choice. Using HTTPS"
-            FRONTEND_REPO="https://github.com/omarelmoghazy/simsbuddy.git"
+            FRONTEND_REPO="https://github.com/omarelmoghazy/simsbuddy-ssr.git"
             BACKEND_REPO="https://github.com/MHGanainy/mvp-backend.git"
             VOICE_REPO="https://github.com/MHGanainy/simsbuddy-voice-agent.git"
             ;;
@@ -411,7 +411,7 @@ download_code() {
     echo -e "  ${PACKAGE} Fetching latest staging code..."
     echo ""
 
-    setup_repository "Frontend" "$FRONTEND_REPO" "frontend"
+    setup_repository "Frontend" "$FRONTEND_REPO" "frontend-ssr"
     setup_repository "Backend" "$BACKEND_REPO" "backend"
     setup_repository "Voice Agent" "$VOICE_REPO" "voice-agent"
 
@@ -537,7 +537,7 @@ show_success() {
     echo ""
     echo -e "${BOLD}${YELLOW}📝 What's running:${NC}"
     echo ""
-    echo -e "  ${CHECK} Frontend - React with Vite (hot reload enabled)"
+    echo -e "  ${CHECK} Frontend - Next.js 16 SSR (Turbopack hot reload)"
     echo -e "  ${CHECK} Backend - Fastify API server"
     echo -e "  ${CHECK} Voice Agent - AI conversation system"
     echo -e "  ${CHECK} Redis - Session storage"

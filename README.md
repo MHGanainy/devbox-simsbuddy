@@ -89,8 +89,8 @@ cp .env.example .env
 - `ASSEMBLY_API_KEY` - Get from https://www.assemblyai.com/app/account
 - `INWORLD_API_KEY` - Get from https://studio.inworld.ai/workspaces
 - `OPENAI_API_KEY` - Get from https://platform.openai.com/api-keys
-- Firebase variables - Get from Firebase Console
-- EmailJS variables - Get from https://dashboard.emailjs.com/admin
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` - Get from Google Cloud Console → APIs & Services → Credentials
+- `NEXT_PUBLIC_EMAIL_JS_*` variables - Get from https://dashboard.emailjs.com/admin
 - Stripe keys - Get from https://dashboard.stripe.com/test/apikeys
 
 **Optional:** Leave other variables blank if you don't need them.
@@ -425,7 +425,7 @@ When you start the staging environment, you're running 4 services:
 
 | Service | What It Does | Port |
 |---------|--------------|------|
-| **Frontend** | React web application (what users see) | 5173 |
+| **Frontend** | Next.js 16 SSR web app — React 19 + Ant Design (what users see) | 5173 |
 | **Backend** | Fastify API server (handles data and logic) | 3000 |
 | **Voice Agent** | AI voice conversation system | 8000 |
 | **Redis** | In-memory database for sessions | 6379 |
@@ -508,7 +508,7 @@ Once you see "All services running!" you're ready to:
 - This setup is for staging only
 
 ### Q: Do I need all the API keys?
-**A:** Required: DATABASE_URL, LIVEKIT_*, GROQ, ASSEMBLY, INWORLD, OPENAI, Firebase, EmailJS, Stripe
+**A:** Required: DATABASE_URL, LIVEKIT_*, GROQ, ASSEMBLY, INWORLD, OPENAI, NEXT_PUBLIC_GOOGLE_CLIENT_ID, NEXT_PUBLIC_EMAIL_JS_*, Stripe
 Optional: DEEPGRAM, ELEVEN, AWS, Google Cloud, etc.
 
 ### Q: How do I get API keys?
