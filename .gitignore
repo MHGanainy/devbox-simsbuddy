@@ -10,6 +10,7 @@ voice-agent/
 .env
 .env.local
 .env.*.local
+env
 
 # Docker volumes
 postgres_data/
@@ -65,3 +66,6 @@ build/
 .env.backup.*
 .claude/*
 thoughts/*
+
+# Playwright MCP scratch (screenshots, console logs, snapshots)
+.playwright-mcp/
